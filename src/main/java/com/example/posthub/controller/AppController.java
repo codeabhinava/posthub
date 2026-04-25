@@ -41,7 +41,7 @@ public class AppController {
     }
 
     @GetMapping("/posts/{postId}/score")
-    public String getScore(@PathVariable Long postId) {
+    public Object getScore(@PathVariable Long postId) {
         return redisService.getScore(postId);
     }
 

@@ -62,6 +62,22 @@ public class PosthubService {
             throw new RuntimeException("Max depth exceeded");
         }
 
+        String countKey = "post:" + postId + ":comment_count";
+        Long count = redisService.increment(countKey);
+
+        if (count > 100) {
+            redisService.decrement(countKey);
+            throw new RuntimeException("Too many comments on this post");
+        }
+
+        String cooldownKey = "cooldown:user:" + user.getId() + ":post:" + postId;
+
+        if (Boolean.TRUE.equals(redisService.exists(cooldownKey))) {
+            throw new RuntimeException("Cooldown active. Try again later.");
+        }
+
+        redisService.setWithTTL(cooldownKey, "1", 10);
+
         comment.setPost(post);
         comment.setAuthor(user);
         comment.setDepth_level(depth);
@@ -70,7 +86,7 @@ public class PosthubService {
 
         redisService.incrementVirality(postId, 50);
 
-        return "Comment added!";
+        return "Comment added successfully!";
     }
 
     public String likePost(Long postId) {
